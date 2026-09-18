@@ -1,0 +1,75 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum PaymentType {
+  PAY_NOW
+  PAY_AT_HOTEL
+}
+
+enum PaymentGateway {
+  GCASH
+  MAYA
+  CARD
+  NONE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Room {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  name          String
+  badge         String
+  pricePerNight Decimal   @db.Decimal(10, 2)
+  description   String
+  amenities     String[]
+  capacity      Int       @default(2)
+  imageUrl      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  bookings      Booking[]
+
+  @@map("rooms")
+}
+
+model Booking {
+  id              String         @id @default(cuid())
+  referenceCode   String         @unique
+  checkIn         DateTime
+  checkOut        DateTime
+  nights          Int
+  pax             Int            @default(2)
+  guestName       String
+  guestEmail      String
+  guestPhone      String
+  
+  roomId          String
+  room            Room           @relation(fields: [roomId], references: [id])
+  
+  paymentType     PaymentType    @default(PAY_NOW)
+  paymentGateway  PaymentGateway @default(NONE)
+  
+  standardTotal   Decimal        @db.Decimal(10, 2)
+  discountAmount  Decimal        @db.Decimal(10, 2)
+  finalTotal      Decimal        @db.Decimal(10, 2)
+  
+  status          BookingStatus  @default(CONFIRMED)
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("bookings")
+}
